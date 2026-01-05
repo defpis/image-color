@@ -388,9 +388,9 @@ function buildLUTData(
 
   // For each of 8 segments
   for (let i = 0; i < LUT_SIZE; i++) {
-    // LUT[i] represents the adjustment at hue = i * 45°
-    // The shader interpolates linearly between LUT entries
-    const segmentHue = (i / LUT_SIZE) * TWO_PI;
+    // LUT[i] covers hue range [i * 45°, (i+1) * 45°)
+    // Use segment center for weight calculation to ensure symmetric adjustments
+    const segmentHue = ((i + 0.5) / LUT_SIZE) * TWO_PI;
 
     let brightness = 0;
     let saturation = 0;
