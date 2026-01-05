@@ -41,7 +41,7 @@ interface DownsampleParams {
 }
 
 interface HistogramParams {
-  minChroma: number;
+  satThreshold: number;
   weightMode: HistogramWeightMode;
   lightnessMargin: number;
 }
@@ -68,7 +68,7 @@ function App() {
     smooth: false,
   });
   const [histogramParams, setHistogramParams] = useState<HistogramParams>({
-    minChroma: 0.02,
+    satThreshold: 0.1,
     weightMode: "chroma",
     lightnessMargin: 0.1,
   });
@@ -143,7 +143,7 @@ function App() {
       image,
       peakColors,
       adjustments: colorAdjustments,
-      satThreshold: histogramParams.minChroma,
+      satThreshold: histogramParams.satThreshold,
     });
 
   return (
@@ -237,9 +237,12 @@ function App() {
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 text-sm">最小色度</span>
                 <NumberInput
-                  value={histogramParams.minChroma}
-                  onChange={(minChroma) =>
-                    setHistogramParams((p) => ({ ...p, minChroma }))
+                  value={histogramParams.satThreshold}
+                  onChange={(satThreshold) =>
+                    setHistogramParams((p) => ({
+                      ...p,
+                      satThreshold,
+                    }))
                   }
                   className="w-20"
                 />

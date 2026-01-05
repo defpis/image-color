@@ -2,6 +2,14 @@ import { rgbToOklch } from "./oklch";
 
 export type HistogramWeightMode = "count" | "chroma" | "chromaLightness";
 
+/**
+ * Attempt to provide an attempt for values that are outside of the range [0, 1].
+ */
+function smoothstep(edge0: number, edge1: number, x: number): number {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
 export interface HueHistogram {
   /** 360 buckets, one for each degree of hue */
   buckets: number[];
@@ -19,7 +27,7 @@ export interface HueHistogram {
 
 export interface ExtractHueHistogramOptions {
   /** Minimum chroma threshold to include pixel (0-0.4, default 0.02) */
-  minChroma?: number;
+  satThreshold?: number;
   /** Weight mode: "count" (1 per pixel), "chroma" (chroma only), or "chromaLightness" (chroma * lightnessWeight, default) */
   weightMode?: HistogramWeightMode;
   /**
@@ -41,7 +49,7 @@ export function extractHueHistogram(
   options: ExtractHueHistogramOptions = {}
 ): HueHistogram {
   const {
-    minChroma = 0.02,
+    satThreshold = 0.02,
     weightMode = "chromaLightness",
     lightnessMargin = 0,
   } = options;
@@ -69,9 +77,6 @@ export function extractHueHistogram(
 
     const [l, c, h] = rgbToOklch(r, g, b);
 
-    // Skip low chroma (grayscale) pixels
-    if (c < minChroma) continue;
-
     // Skip extreme lightness (too dark or too bright)
     if (l < minLightness || l > maxLightness) continue;
 
@@ -81,7 +86,7 @@ export function extractHueHistogram(
     if (weightMode === "count") {
       weight = 1;
     } else if (weightMode === "chroma") {
-      weight = c;
+      weight = smoothstep(0, satThreshold, c);
     } else {
       // chromaLightness: chroma * lightnessWeight (peaks at L=0.5)
       const lightnessWeight = 1 - 2 * Math.abs(l - 0.5);

@@ -7,23 +7,23 @@ import {
 
 interface UseHueHistogramOptions {
   imageData: ImageData | null;
-  minChroma?: number;
+  satThreshold?: number;
   weightMode?: HistogramWeightMode;
   lightnessMargin?: number;
 }
 
 export function useHueHistogram({
   imageData,
-  minChroma,
+  satThreshold,
   weightMode,
   lightnessMargin,
 }: UseHueHistogramOptions): HueHistogram | null {
   return useMemo(() => {
     if (!imageData) return null;
     return extractHueHistogram(imageData, {
-      minChroma,
+      satThreshold,
       weightMode,
       lightnessMargin,
     });
-  }, [imageData, minChroma, weightMode, lightnessMargin]);
+  }, [imageData, satThreshold, weightMode, lightnessMargin]);
 }

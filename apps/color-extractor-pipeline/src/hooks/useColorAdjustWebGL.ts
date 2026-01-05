@@ -388,8 +388,6 @@ function buildLUTData(
 
   // For each of 8 segments
   for (let i = 0; i < LUT_SIZE; i++) {
-    // LUT[i] covers hue range [i * 45°, (i+1) * 45°)
-    // Use segment center for weight calculation to ensure symmetric adjustments
     const segmentHue = ((i + 0.5) / LUT_SIZE) * TWO_PI;
 
     let brightness = 0;
@@ -402,27 +400,37 @@ function buildLUTData(
       const adj = adjustments[index] ?? DEFAULT_ADJUSTMENT;
       if (adj.hue === 0 && adj.saturation === 0 && adj.lightness === 0) return;
 
-      // Peak hue in radians
-      const peakHue = wrapHue((color.hue * Math.PI) / 180);
+      // Convert left and right boundaries to radians
+      const leftHue = wrapHue((peak.left * Math.PI) / 180);
+      const rightHue = wrapHue((peak.right * Math.PI) / 180);
 
-      // Calculate half width (handle wrap-around)
-      let rangeWidth: number;
+      // Check if segmentHue is within [leftHue, rightHue]
+      let insideRange: boolean;
       if (peak.right >= peak.left) {
-        rangeWidth = ((peak.right - peak.left) * Math.PI) / 180;
+        // No wrap-around
+        insideRange = segmentHue >= leftHue && segmentHue <= rightHue;
       } else {
-        rangeWidth = ((360 - peak.left + peak.right) * Math.PI) / 180;
+        // Wrap-around: range crosses 0/2π
+        insideRange = segmentHue >= leftHue || segmentHue <= rightHue;
       }
 
-      const minHalfWidth = (22.5 * Math.PI) / 180;
-      const halfWidth = Math.max(rangeWidth / 2, minHalfWidth);
-      const feather = 0.3;
-      const featherStart = halfWidth * (1 - feather);
+      // Calculate distance to nearest edge
+      let distToNearestEdge: number;
+      if (insideRange) {
+        distToNearestEdge = 0;
+      } else {
+        const distToLeft = hueDist(segmentHue, leftHue);
+        const distToRight = hueDist(segmentHue, rightHue);
+        distToNearestEdge = Math.min(distToLeft, distToRight);
+      }
 
-      // Distance from segment center to peak center
-      const dist = hueDist(segmentHue, peakHue);
+      // Feather zone outside the peak range
+      const featherWidth = Math.PI / 8; // 22.5 degrees
 
-      // Calculate weight using smoothstep
-      const weight = 1 - smoothstep(featherStart, halfWidth, dist);
+      // Weight: 1.0 inside range, smoothstep falloff outside
+      const weight = insideRange
+        ? 1
+        : 1 - smoothstep(0, featherWidth, distToNearestEdge);
 
       if (weight <= 0) return;
 
