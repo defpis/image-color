@@ -11,3 +11,4 @@ export {
   type PeakColor,
   type ExtractPeakColorsOptions,
 } from "./extract-peak-colors";
+export { extractColors, type ExtractColorsOptions } from "./extract-colors";

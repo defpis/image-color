@@ -32,7 +32,6 @@ const COLOR_MODE_OPTIONS: { value: ColorMode; label: string }[] = [
 const WEIGHT_MODE_OPTIONS: { value: HistogramWeightMode; label: string }[] = [
   { value: "count", label: "计数" },
   { value: "chroma", label: "色度" },
-  { value: "chromaLightness", label: "色度亮度" },
 ];
 
 interface DownsampleParams {
@@ -65,7 +64,7 @@ function App() {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [downsampleParams, setDownsampleParams] = useState<DownsampleParams>({
     size: 256,
-    smooth: false,
+    smooth: true,
   });
   const [histogramParams, setHistogramParams] = useState<HistogramParams>({
     satThreshold: 0.1,
@@ -235,7 +234,7 @@ function App() {
           <ParamCard title="直方图参数" dotColor="bg-amber-400">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 text-sm">最小色度</span>
+                <span className="text-gray-600 text-sm">饱和度阈值</span>
                 <NumberInput
                   value={histogramParams.satThreshold}
                   onChange={(satThreshold) =>

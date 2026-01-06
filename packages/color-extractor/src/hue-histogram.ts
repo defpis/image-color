@@ -1,6 +1,6 @@
 import { rgbToOklch } from "./oklch";
 
-export type HistogramWeightMode = "count" | "chroma" | "chromaLightness";
+export type HistogramWeightMode = "count" | "chroma";
 
 /**
  * Attempt to provide an attempt for values that are outside of the range [0, 1].
@@ -28,7 +28,7 @@ export interface HueHistogram {
 export interface ExtractHueHistogramOptions {
   /** Minimum chroma threshold to include pixel (0-0.4, default 0.02) */
   satThreshold?: number;
-  /** Weight mode: "count" (1 per pixel), "chroma" (chroma only), or "chromaLightness" (chroma * lightnessWeight, default) */
+  /** Weight mode: "count" (1 per pixel) or "chroma" (smoothstep chroma weight, default) */
   weightMode?: HistogramWeightMode;
   /**
    * Lightness margin to filter extreme values (default 0, no filtering)
@@ -50,7 +50,7 @@ export function extractHueHistogram(
 ): HueHistogram {
   const {
     satThreshold = 0.02,
-    weightMode = "chromaLightness",
+    weightMode = "chroma",
     lightnessMargin = 0,
   } = options;
   const { data, width, height } = imageData;
@@ -82,16 +82,7 @@ export function extractHueHistogram(
 
     const bucket = Math.floor(h) % 360;
     // Use weight based on mode
-    let weight: number;
-    if (weightMode === "count") {
-      weight = 1;
-    } else if (weightMode === "chroma") {
-      weight = smoothstep(0, satThreshold, c);
-    } else {
-      // chromaLightness: chroma * lightnessWeight (peaks at L=0.5)
-      const lightnessWeight = 1 - 2 * Math.abs(l - 0.5);
-      weight = c * Math.max(lightnessWeight, 0);
-    }
+    const weight = weightMode === "count" ? 1 : smoothstep(0, satThreshold, c);
     buckets[bucket] += weight;
     // Track chroma and lightness sums for averaging
     chromaSum[bucket] += c;
